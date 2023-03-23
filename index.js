@@ -9,14 +9,13 @@ const jwt =require("jsonwebtoken")
 
 require("dotenv").config()
 const PORT = process.env.PORT ;
-
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.get("/", (req, res) => {
-	res.send("welcome home")
+	res.send("welcome")
 })
 
 app.use(cors())
@@ -24,7 +23,7 @@ app.use(cors())
 
 app.post("/signup", async (req, res) => {
 	const { password } = req.body;
-	bcrypt.hash(password, 6).then(async function (hash) {
+	bcrypt.hash(password, 8).then(async function (hash) {
 		const new_user = new UserModel({ ...req.body, password: hash })
 		await new_user.save();
 		res.json({msg:"sign up successful"})
@@ -40,15 +39,24 @@ app.post("/login", async (req, res) => {
 	const hash = user.password;
 	bcrypt.compare(password, hash, function (err, result) {
 		if (result) {
-			const token = jwt.sign({ userId:user._id }, "passkey");
+			const token = jwt.sign({ userId:user._id }, "passkey", { expiresIn: '1h' });
 			res.json({msg:"login successfull",token:token})
 		} else res.json({msg:"Invalid Credentials"})
-
 	})
-
 })
 
-
+app.post("/verify", async (req, res) => {
+	const token = req.headers.authorization;
+	try {
+	  const data = jwt.verify(token, "REFRESH1234");
+	  const maintoken = jwt.sign(data, "SECRET1234", {
+		expiresIn: "5 second",
+	  });
+	  return res.send({ token: maintoken });
+	} catch (error) {
+	  return res.send("refresh token invalid");
+	}
+  });
 app.listen(PORT || 6000, () => {
   dbConnect();
   console.log(`Server started on port ${PORT}`);

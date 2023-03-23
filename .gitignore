@@ -1,1 +1,2 @@
-/nodegmodule
+/node_modules
+.env
